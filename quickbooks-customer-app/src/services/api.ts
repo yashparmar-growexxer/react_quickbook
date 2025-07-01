@@ -18,22 +18,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// authService.ts
+const authListeners: Array<(isAuth: boolean) => void> = [];
+
 export const authService = {
   login: (email: string, password: string) => {
-    // Static login for demo
     if (email === 'admin@gmail.com' && password === 'Admin@123') {
       const fakeToken = 'fake-jwt-token';
       localStorage.setItem('token', fakeToken);
+      authListeners.forEach(listener => listener(true));
       return Promise.resolve({ token: fakeToken });
     }
     return Promise.reject(new Error('Invalid credentials'));
   },
   logout: () => {
     localStorage.removeItem('token');
+    authListeners.forEach(listener => listener(false));
   },
-  isAuthenticated: () => {
-    return !!localStorage.getItem('token');
-  },
+  isAuthenticated: () => !!localStorage.getItem('token'),
+  subscribe: (callback: (isAuth: boolean) => void) => {
+    authListeners.push(callback);
+    return () => {
+      const index = authListeners.indexOf(callback);
+      if (index > -1) authListeners.splice(index, 1);
+    };
+  }
 };
 
 export const customerService = {

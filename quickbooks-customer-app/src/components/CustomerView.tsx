@@ -26,10 +26,29 @@ export default function CustomerView({ customer }: CustomerViewProps) {
             <h4 className="text-sm font-medium text-gray-500">Email</h4>
             <p className="mt-1 text-sm text-gray-900">{customer.PrimaryEmailAddr?.Address || '-'}</p>
           </div>
+             <div>
+            <h4 className="text-sm font-medium text-gray-500">Status</h4>
+            <p className={`mt-1 text-sm ${customer.Active == true ? 'text-green-950': 'text-red-600'} font-bold`}>
+              {customer.Active ? 'Active' : 'Inactive'}
+            </p>
+          </div>
+           <div>
+            <h4 className="text-sm font-medium text-gray-500">First Name</h4>
+            <p className="mt-1 text-sm text-gray-900">
+              {customer.GivenName }
+            </p>
+          </div>
+           <div>
+            <h4 className="text-sm font-medium text-gray-500">Last Name</h4>
+            <p className="mt-1 text-sm text-gray-900">
+              {customer.FamilyName}
+            </p>
+          </div>
           <div>
             <h4 className="text-sm font-medium text-gray-500">Phone</h4>
             <p className="mt-1 text-sm text-gray-900">{customer.PrimaryPhone?.FreeFormNumber || '-'}</p>
           </div>
+          
           <div>
             <h4 className="text-sm font-medium text-gray-500">Address</h4>
             <p className="mt-1 text-sm text-gray-900">
@@ -38,12 +57,9 @@ export default function CustomerView({ customer }: CustomerViewProps) {
               {customer.BillAddr?.Country || ''}
             </p>
           </div>
-          <div>
-            <h4 className="text-sm font-medium text-gray-500">Status</h4>
-            <p className="mt-1 text-sm text-gray-900">
-              {customer.Active ? 'Active' : 'Inactive'}
-            </p>
-          </div>
+       
+         
+         
           {customer.Notes && (
             <div className="sm:col-span-2">
               <h4 className="text-sm font-medium text-gray-500">Notes</h4>

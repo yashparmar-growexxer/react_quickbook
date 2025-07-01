@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { customerService } from '../services/api';
 import CustomerList from '../components/CustomerList';
 import { Customer } from '../types';
+import Loading from '../components/Loading'; // Import the new Loading component
 
 export default function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -24,8 +25,22 @@ export default function Customers() {
     fetchCustomers();
   }, []);
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (loading) return <Loading name={"Customers"}  />; // Use the new Loading component
+  
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-[200px]">
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-md">
+        <strong className="font-bold">Error! </strong>
+        <span className="block sm:inline">{error}</span>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-2 text-sm bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div>

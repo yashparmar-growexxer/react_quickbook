@@ -6,6 +6,7 @@ import { Customer } from '../types';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import Loading from '../components/Loading';
 
 export default function CustomerEdit() {
   const { id } = useParams<{ id: string }>();
@@ -60,7 +61,7 @@ export default function CustomerEdit() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loading />
   if (error) return <div className="text-red-500">{error}</div>;
   if (!customer) return <div>Customer not found</div>;
 

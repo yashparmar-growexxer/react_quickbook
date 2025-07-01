@@ -1,17 +1,29 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Customers from './pages/Customers';
-import CustomerCreate from './pages/CustomerCreate';
-import CustomerDetail from './pages/CustomerDetail';
-import CustomerEdit from './pages/CustomerEdit';
-import Login from './pages/Login';
-import { authService } from './services/api';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Navigate, Route, Routes } from "react-router-dom";
+import InProgress from "./pages/InProgress";
+import CustomerCreate from "./pages/CustomerCreate";
+import CustomerDetail from "./pages/CustomerDetail";
+import Dashboard from "./pages/Dashboard";
+import Layout from "./components/Layout";
+import { authService } from "./services/api";
+import Customers from "./pages/Customers";
+import CustomerEdit from "./pages/CustomerEdit";
+import NotFound from "./pages/NotFound";
+import { ToastContainer } from "react-toastify";
+import Login from "./pages/Login";
+import { useEffect, useState } from "react";
 
 function App() {
-  const isAuthenticated = authService.isAuthenticated();
+  const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
+
+   useEffect(() => {
+    // This will make the component re-render when localStorage changes
+    const handleStorageChange = () => {
+      setIsAuthenticated(authService.isAuthenticated());
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   return (
     <>
@@ -23,11 +35,19 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           
           <Route path="customers">
-            <Route index element={<Customers />} />
+            <Route index element={<Customers/>} />
             <Route path="create" element={<CustomerCreate />} />
             <Route path=":id" element={<CustomerDetail />} />
             <Route path=":id/edit" element={<CustomerEdit />} />
           </Route>
+
+          {/* Other module routes */}
+          <Route path="invoices" element={<InProgress />} />
+          <Route path="payments" element={<InProgress />} />
+          {/* Add other module routes */}
+
+          {/* 404 Catch-all - must be last */}
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
       
