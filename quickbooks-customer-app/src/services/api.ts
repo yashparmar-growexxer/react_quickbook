@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Invoice, InvoiceResponse } from '../types';
 
 const API_BASE_URL = 'http://localhost:5000/api'; // Your backend URL
 
@@ -52,4 +53,30 @@ export const customerService = {
   create: (data: any) => api.post('/customers/create-customer', data),
   update: (id: string, data: any) => api.put(`/customers/${id}`, data),
   // Add delete if needed
+};
+
+
+
+// services/api.ts
+export const invoiceService = {
+  getAll: (params?: { customerId?: string, status?: string }) => 
+    api.get<InvoiceResponse>('/invoices', { params }),
+  
+  getById: (id: string) => 
+    api.get<Invoice>(`/invoices/${id}`),
+  
+  create: (data: any) => 
+    api.post<Invoice>('/invoices/create-invoice', data),
+  
+  update: (id: string, data: any) => 
+    api.put<Invoice>(`/invoices/${id}`, data),
+  
+  getPdf: (id: string) => 
+    api.get(`/invoices/${id}/pdf`, { responseType: 'blob' }),
+  
+  send: (id: string, email?: string) => 
+    api.post(`/invoices/${id}/send`, email ? { email } : null),
+  
+  getItems: () => 
+    api.get<{ items: any[] }>('/items').then(res => res.data.items || []),
 };
