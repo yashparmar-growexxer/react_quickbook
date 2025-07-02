@@ -48,6 +48,7 @@ export interface Customer {
 
 // types/index.ts
 export interface Invoice {
+  lineItems: any;
   id: string;
   docNumber: string;
   customerId: string;
@@ -56,8 +57,18 @@ export interface Invoice {
   status: 'OPEN' | 'PAID' | 'PARTIALLY_PAID'; // Add other statuses if needed
   dueDate: string;
   date: string;
-  customerName?: string; // Optional - you might want to add this
+  customerName?: string;
+  SyncToken?: string; // Optional - you might want to add this
 }
+
+// export interface Invoice {
+//   id: string;
+//   docNumber: string;
+//   customerId: string;
+//   lineItems: InvoiceLineItem[];
+//   SyncToken?: string;
+//   // ...other properties
+// }
 
 export interface InvoiceResponse {
   count: number;

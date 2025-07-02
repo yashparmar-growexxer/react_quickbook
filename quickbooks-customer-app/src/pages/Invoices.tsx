@@ -137,7 +137,7 @@ export default function Invoices() {
                 id="search"
                 name="search"
                 className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Search invoices..."
+                placeholder="Search invoices by Name, Invoice No, Amount "
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

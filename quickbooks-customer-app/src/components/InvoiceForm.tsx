@@ -97,7 +97,7 @@ export default function InvoiceForm({
         <div>
           <label className="block text-sm font-medium text-gray-700">Customer</label>
           <select
-            value={formData.CustomerRef.value}
+            value={formData?.CustomerRef?.value}
             onChange={(e) => setFormData({
               ...formData,
               CustomerRef: { value: e.target.value }
