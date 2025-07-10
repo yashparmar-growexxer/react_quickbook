@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Invoice, InvoiceResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:5000/api'; // Your backend URL
+const API_BASE_URL = 'http://localhost:5000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -72,11 +72,125 @@ export const invoiceService = {
     api.put<Invoice>(`/invoices/${id}`, data),
   
   getPdf: (id: string) => 
-    api.get(`/invoices/${id}/pdf`, { responseType: 'blob' }),
+    api.get(`/invoices/${id}/pdf`, { 
+      responseType: 'blob',
+      headers: {
+        'Accept': 'application/pdf'
+      }
+    }),
   
   send: (id: string, email?: string) => 
     api.post(`/invoices/${id}/send`, email ? { email } : null),
   
   getItems: () => 
     api.get<{ items: any[] }>('/items').then(res => res.data.items || []),
+};
+
+interface PaymentResponse {
+  payments: Payment[];
+  count: number;
+}
+
+interface Payment {
+  id: string;
+  paymentRefNum: string;
+  totalAmount: number;
+  unappliedAmount: number;
+  customer: {
+    id: string;
+    name: string;
+  };
+  paymentMethod: {
+    id: string;
+    name: string;
+  };
+  date: string;
+  syncToken: string;
+  // ... other payment fields
+}
+
+export const paymentService = {
+  /**
+   * Get all payments with optional filters
+   */
+  getAll: (params?: { 
+    customerId?: string; 
+    startDate?: string; 
+    endDate?: string;
+    paymentMethod?: string;
+  }) => api.get<PaymentResponse>('/payments', { params }),
+  
+  /**
+   * Get a single payment by ID
+   */
+  getById: (id: string) => 
+    api.get<Payment>(`/payments/${id}`),
+  
+  /**
+   * Create a new payment
+   */
+  create: (data: {
+    CustomerRef: { value: string; name?: string };
+    TotalAmt: number;
+    PaymentRefNum: string;
+    PaymentMethodRef?: { value: string; name?: string };
+    DepositToAccountRef?: { value: string; name?: string };
+    TxnDate?: string;
+    Line?: Array<{
+      Amount: number;
+      LinkedTxn: { TxnId: string; TxnType: string };
+    }>;
+  }) => api.post<Payment>('/payments', data),
+  
+  /**
+   * Update an existing payment
+   */
+  update: (id: string, data: {
+    Id: string;
+    SyncToken: string;
+    sparse?: boolean;
+    PaymentRefNum?: string;
+    TotalAmt?: number;
+    UnappliedAmt?: number;
+    PaymentMethodRef?: { value: string; name?: string };
+    Line?: Array<{
+      Id?: string;
+      Amount: number;
+      LinkedTxn: { TxnId: string; TxnType: string }[];
+    }>;
+  }) => api.put<Payment>(`/payments/${id}`, data),
+  
+  /**
+   * Delete a payment
+   */
+  delete: (id: string, syncToken: string) => 
+    api.delete(`/payments/${id}`, { 
+      data: { 
+        Id: id, 
+        SyncToken: syncToken 
+      } 
+    }),
+  
+  /**
+   * Apply payment to an invoice
+   */
+  applyToInvoice: (data: {
+    paymentId: string;
+    invoiceId: string;
+    amount: number;
+  }) => api.post<Payment>('/payments/apply', data),
+  
+  /**
+   * Get payment methods
+   */
+  getPaymentMethods: () => 
+    api.get<{ paymentMethods: Array<{ id: string; name: string }> }>('/payment-methods')
+      .then(res => res.data.paymentMethods || []),
+  
+  /**
+   * Get deposit accounts
+   */
+  getDepositAccounts: () => 
+    api.get<{ accounts: Array<{ id: string; name: string }> }>('/deposit-accounts')
+      .then(res => res.data.accounts || [])
 };

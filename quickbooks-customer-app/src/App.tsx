@@ -15,6 +15,10 @@ import Invoices from "./pages/Invoices";
 import InvoiceCreate from "./components/InvoiceCreate";
 import InvoiceDetail from "./pages/InvoiceDetail";
 import InvoiceEdit from "./pages/InvoiceEdit";
+import Payments from "./pages/payments";
+import PaymentViewPage from "./pages/PaymentViewPage";
+import PaymentEditPage from "./pages/PaymentEditPage";
+import AddPaymentPage from "./pages/PaymentAddPage";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(authService.isAuthenticated());
@@ -56,6 +60,13 @@ function App() {
             <Route path="create" element={<InvoiceCreate />} />
             <Route path=":id" element={<InvoiceDetail />} />
             <Route path=":id/edit" element={<InvoiceEdit />} />
+          </Route>
+
+          <Route path="payments">
+            <Route index element={<Payments />} />
+            <Route path="create" element={<AddPaymentPage />} />
+            <Route path=":id" element={<PaymentViewPage />} />
+            <Route path=":id/edit" element={<PaymentEditPage />} />
           </Route>
 
           {/* 404 Catch-all - must be last */}

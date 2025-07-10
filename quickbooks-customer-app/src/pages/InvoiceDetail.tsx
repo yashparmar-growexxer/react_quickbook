@@ -6,10 +6,15 @@ import Loading from '../components/Loading';
 import { Invoice } from '../types';
 
 export default function InvoiceDetail() {
+
+
+  // Usage in your component
+
   const { id } = useParams<{ id: string }>();
   const [invoice, setInvoice] = useState<Invoice | any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -24,9 +29,54 @@ export default function InvoiceDetail() {
         setLoading(false);
       }
     };
-
     fetchInvoice();
   }, [id]);
+
+
+   const handleDownloadPDF = async () => {
+    try {
+      setPdfLoading(true);
+      const pdfBlob:any = await invoiceService.getPdf(id!);
+      
+      // Create a blob URL for the PDF
+      const url = window.URL.createObjectURL(new Blob([pdfBlob]));
+      
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `invoice_${invoice.docNumber}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setPdfLoading(false);
+    } catch (err) {
+      console.error('PDF download failed:', err);
+      setError('Failed to download PDF');
+      setPdfLoading(false);
+    }
+  };
+
+    const openPdfInNewTab = async (invoiceId: string, docNumber?: string) => {
+  try {
+    const response = await invoiceService.getPdf(invoiceId);
+    const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    
+    // Open in new tab
+    window.open(pdfUrl, '_blank');
+    
+    // Optional: Revoke the object URL after some time to free memory
+    setTimeout(() => {
+      URL.revokeObjectURL(pdfUrl);
+    }, 1000);
+  } catch (error) {
+    console.error('Failed to open PDF:', error);
+    // Handle error (show toast, etc.)
+  }
+};
 
   if (loading) return <Loading name="invoice details" />;
 
@@ -65,13 +115,12 @@ export default function InvoiceDetail() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <Link
-            to={`/invoices/${invoice.id}/pdf`}
-            target="_blank"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
-          >
-            Download PDF
-          </Link>
+         <button
+  onClick={() => openPdfInNewTab(invoice.id, invoice.docNumber)}
+  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+>
+  View PDF
+</button>
           <Link
             to={`/invoices/${invoice.id}/send`}
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"

@@ -48,6 +48,8 @@ export interface Customer {
 
 // types/index.ts
 export interface Invoice {
+  customer: any;
+  CustomerMemo: string;
   lineItems: any;
   id: string;
   docNumber: string;
@@ -108,4 +110,32 @@ export interface Item {
   domain?: string;
   sparse?: boolean;
   SyncToken?: string;
+}
+
+
+export interface Payment {
+  id: string;
+  paymentRefNum: string;
+  totalAmount: number;
+  unappliedAmount: number;
+  customer: {
+    id: string;
+    name: string;
+  };
+  paymentMethod: {
+    id: string;
+    name: string;
+  };
+  depositToAccount?: {
+    id: string;
+    name: string;
+  };
+  date: string;
+  privateNote?: string;
+  appliedInvoices: Array<{
+    amount: number;
+    invoiceId: string;
+    invoiceDocNumber?: string;
+  }>;
+  syncToken: string;
 }

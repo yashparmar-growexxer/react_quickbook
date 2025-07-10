@@ -1,57 +1,19 @@
-// src/components/InvoiceEdit.tsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { invoiceService, customerService } from '../services/api';
 import InvoiceForm from '../components/InvoiceForm';
 import Loading from '../components/Loading';
-import { Customer, Invoice, Item } from '../types';
+import { toast } from 'react-toastify';
+import { staticItems } from '../services/items';
 
 export default function InvoiceEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [invoice, setInvoice] = useState<any>(null);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const staticItems: Item[] = [
-    {
-      Id: "1",
-      Name: "Web Design Service",
-      Description: "Professional website design",
-      UnitPrice: 500,
-      Type: "Service"
-    },
-    {
-      Id: "2",
-      Name: "Website Hosting",
-      Description: "Annual hosting package",
-      UnitPrice: 200,
-      Type: "Service"
-    },
-    {
-      Id: "3",
-      Name: "Consulting",
-      Description: "Hourly consulting rate",
-      UnitPrice: 150,
-      Type: "Service"
-    },
-    {
-      Id: "4",
-      Name: "Laptop",
-      Description: "High-performance laptop",
-      UnitPrice: 1200,
-      Type: "Inventory"
-    },
-    {
-      Id: "5",
-      Name: "Monitor",
-      Description: "27-inch 4K monitor",
-      UnitPrice: 400,
-      Type: "Inventory"
-    }
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,19 +29,28 @@ export default function InvoiceEdit() {
         if (!invoiceRes.data) throw new Error('Invoice not found');
         if (!Array.isArray(customersRes.data)) throw new Error('Failed to load customers');
 
-        // Transform invoice line items for the form
+        // Transform the invoice data to match the form's expected structure
         const transformedInvoice = {
           ...invoiceRes.data,
-          Line: invoiceRes.data?.lineItems?.map((item: any) => ({
+          CustomerRef: {
+            value: invoiceRes.data.customer?.id || '',
+            name: invoiceRes.data.customer?.displayName || ''
+          },
+          Line: invoiceRes.data.lineItems?.map((item: any) => ({
             DetailType: 'SalesItemLineDetail',
             Amount: item.amount,
             Description: item.description,
             SalesItemLineDetail: {
-              ItemRef: { value: item.itemId, name: item.description },
+              ItemRef: { 
+                value: item.itemId, 
+                name: staticItems.find(i => i.Id === item.itemId)?.Name || item.description 
+              },
               Qty: item.quantity,
               UnitPrice: item.unitPrice
             }
-          })) || []
+          })) || [],
+          DocNumber: invoiceRes.data.docNumber || '',
+          CustomerMemo: invoiceRes.data.CustomerMemo || ''
         };
 
         setInvoice(transformedInvoice);
@@ -87,6 +58,7 @@ export default function InvoiceEdit() {
       } catch (err) {
         console.error('Error fetching data:', err);
         setError(err instanceof Error ? err.message : 'Failed to load data');
+        toast.error('Failed to load invoice data');
       } finally {
         setLoading(false);
       }
@@ -95,14 +67,13 @@ export default function InvoiceEdit() {
     fetchData();
   }, [id]);
 
-  const handleSubmit = async (data: Partial<Invoice>) => {
+  const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
     setError(null);
     
     try {
       if (!id) throw new Error('Invoice ID is missing');
       
-      // Include the SyncToken for updates
       const updateData = {
         ...data,
         Id: id,
@@ -112,18 +83,14 @@ export default function InvoiceEdit() {
       const response = await invoiceService.update(id, updateData);
       
       if (response.data) {
-        navigate(`/invoices/${id}`, { 
-          state: { 
-            success: 'Invoice updated successfully',
-            updatedInvoice: response.data 
-          } 
-        });
+        toast.success('Invoice updated successfully!');
+        navigate(`/invoices/${id}`);
       } else {
         throw new Error('Failed to update invoice');
       }
     } catch (err) {
       console.error('Error updating invoice:', err);
-      setError(err instanceof Error ? err.message : 'Failed to update invoice');
+      toast.error(err instanceof Error ? err.message : 'Failed to update invoice');
     } finally {
       setIsSubmitting(false);
     }
@@ -150,16 +117,11 @@ export default function InvoiceEdit() {
       <InvoiceForm 
         initialData={invoice}
         customers={customers}
-        items={staticItems}  // Using the static items here
+        items={staticItems}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+        isEditMode={true}
       />
-      
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 text-red-600 rounded">
-          {error}
-        </div>
-      )}
     </div>
   );
 }

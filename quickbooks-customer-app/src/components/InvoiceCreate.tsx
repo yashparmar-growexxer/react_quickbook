@@ -3,53 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { invoiceService, customerService } from '../services/api';
 import InvoiceForm from '../components/InvoiceForm';
 import Loading from '../components/Loading';
-import { Customer, Item } from '../types';
 import { toast } from 'react-toastify';
+import { staticItems } from '../services/items';
 
 export default function InvoiceCreate() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Static items data
-  const staticItems: Item[] = [
-    {
-      Id: "1",
-      Name: "Web Design Service",
-      Description: "Professional website design",
-      UnitPrice: 500,
-      Type: "Service"
-    },
-    {
-      Id: "2",
-      Name: "Website Hosting",
-      Description: "Annual hosting package",
-      UnitPrice: 200,
-      Type: "Service"
-    },
-    {
-      Id: "3",
-      Name: "Consulting",
-      Description: "Hourly consulting rate",
-      UnitPrice: 150,
-      Type: "Service"
-    },
-    {
-      Id: "4",
-      Name: "Laptop",
-      Description: "High-performance laptop",
-      UnitPrice: 1200,
-      Type: "Inventory"
-    },
-    {
-      Id: "5",
-      Name: "Monitor",
-      Description: "27-inch 4K monitor",
-      UnitPrice: 400,
-      Type: "Inventory"
-    }
-  ];
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -75,7 +36,7 @@ export default function InvoiceCreate() {
       navigate('/invoices');
     } catch (error) {
       console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice');
+      toast.error(error instanceof Error ? error.message : 'Failed to create invoice');
     } finally {
       setIsSubmitting(false);
     }
