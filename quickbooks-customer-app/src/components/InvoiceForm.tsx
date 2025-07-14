@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Customer, Item } from '../types';
-import { invoiceService } from '../services/api';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom';
 
 interface InvoiceFormProps {
   initialData?: any;
@@ -21,9 +19,7 @@ export default function InvoiceForm({
   isSubmitting,
   isEditMode = false
 }: InvoiceFormProps) {
-  const navigate = useNavigate
   const [formData, setFormData] = useState(() => {
-
     const defaultData = {
       CustomerRef: { value: '', name: '' },
       TxnDate: new Date().toISOString().split('T')[0],
@@ -34,7 +30,6 @@ export default function InvoiceForm({
     };
     return initialData || defaultData;
   });
-  console.log(formData, "formdata")
 
   const [newLineItem, setNewLineItem] = useState({
     SalesItemLineDetail: {
@@ -48,118 +43,50 @@ export default function InvoiceForm({
 
   const [errors, setErrors] = useState({
     customer: false,
-    item: false
+    items: false
   });
 
   useEffect(() => {
     if (isEditMode && initialData) {
-      setFormData({
-        ...initialData,
-        CustomerRef: initialData.CustomerRef || { value: '', name: '' },
-        Line: initialData.lineItems?.map((item: any) => ({
-          DetailType: 'SalesItemLineDetail',
-          Amount: item.amount,
-          Description: item.description,
-          SalesItemLineDetail: {
-            ItemRef: {
-              value: item.itemId,
-              name: items.find(i => i.Id === item.itemId)?.Name || item.description
-            },
-            Qty: item.quantity,
-            UnitPrice: item.unitPrice
-          }
-        })) || []
-      });
-
-      // Pre-fill the first item in edit mode (if exists)
-      if (initialData.lineItems?.length > 0) {
-        const firstItem = initialData.lineItems[0];
-        setNewLineItem({
-          SalesItemLineDetail: {
-            ItemRef: {
-              value: firstItem.itemId,
-              name: items.find(i => i.Id === firstItem.itemId)?.Name || firstItem.description
-            },
-            Qty: firstItem.quantity,
-            UnitPrice: firstItem.unitPrice
-          },
-          Description: firstItem.description,
-          Amount: firstItem.amount
-        });
-      }
+      setFormData(initialData);
     }
-  }, [initialData, isEditMode, items]);
+  }, [initialData, isEditMode]);
 
-  // useEffect(() => {
-  //   if (isEditMode && initialData) {
-  //     setFormData({
-  //       ...initialData,
-  //       CustomerRef: initialData.CustomerRef || { value: '', name: '' },
-  //       Line: initialData.lineItems?.map((item: any) => ({
-  //         DetailType: 'SalesItemLineDetail',
-  //         Amount: item.amount,
-  //         Description: item.description,
-  //         SalesItemLineDetail: {
-  //           ItemRef: {
-  //             value: item.itemId,
-  //             name: items.find(i => i.Id === item.itemId)?.Name || item.description
-  //           },
-  //           Qty: item.quantity,
-  //           UnitPrice: item.unitPrice
-  //         }
-  //       })) || []
-  //     });
-  //   }
-  // }, [initialData, isEditMode, items]);
-
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
+    // Validate form
     const newErrors = {
-      customer: !formData.CustomerRef?.value,
-      item: formData.Line.length === 0
+      customer: !formData.CustomerRef.value,
+      items: formData.Line.length === 0
     };
 
     setErrors(newErrors);
 
-    if (newErrors.customer || newErrors.item) {
+    if (newErrors.customer || newErrors.items) {
       toast.error('Please fill all required fields');
       return;
     }
 
-    // Prepare the data for API
-    const apiData = {
+    // Prepare data for submission
+    const submissionData = {
+      ...formData,
       CustomerRef: {
         value: formData.CustomerRef.value
       },
-      TxnDate: formData.TxnDate,
-      DueDate: formData.DueDate,
-      Line: formData.Line.map((item: any) => ({
-        DetailType: 'SalesItemLineDetail',
-        Amount: item.SalesItemLineDetail.Qty * item.SalesItemLineDetail.UnitPrice, // Calculate amount
-        Description: item.Description,
-        SalesItemLineDetail: {
-          ItemRef: {
-            value: item.SalesItemLineDetail.ItemRef.value
-          },
-          Qty: item.SalesItemLineDetail.Qty,
-          UnitPrice: item.SalesItemLineDetail.UnitPrice
-        }
-      })),
-      CustomerMemo: formData.CustomerMemo,
-      // Include these only in edit mode
-      ...(isEditMode && initialData && {
-        Id: initialData.Id,
-        SyncToken: initialData.SyncToken || '0'
-      })
+      Line: formData.Line.map((line: any) => ({
+        ...line,
+        Amount: line.SalesItemLineDetail.Qty * line.SalesItemLineDetail.UnitPrice
+      }))
     };
 
-    onSubmit(apiData);
+    onSubmit(submissionData);
   };
+
   const addLineItem = () => {
     if (!newLineItem.SalesItemLineDetail.ItemRef.value) {
-      setErrors(prev => ({ ...prev, item: true }));
+      setErrors(prev => ({ ...prev, items: true }));
+      toast.error('Please select an item');
       return;
     }
 
@@ -169,7 +96,7 @@ export default function InvoiceForm({
     const newLine = {
       DetailType: 'SalesItemLineDetail',
       Amount: amount,
-      Description: newLineItem.Description || selectedItem?.Name,
+      Description: newLineItem.Description || selectedItem?.Name || '',
       SalesItemLineDetail: {
         ItemRef: {
           value: selectedItem?.Id || '',
@@ -185,6 +112,7 @@ export default function InvoiceForm({
       Line: [...formData.Line, newLine]
     });
 
+    // Reset new line item form
     setNewLineItem({
       SalesItemLineDetail: {
         ItemRef: { value: '', name: '' },
@@ -195,7 +123,7 @@ export default function InvoiceForm({
       Amount: 0
     });
 
-    setErrors(prev => ({ ...prev, item: false }));
+    setErrors(prev => ({ ...prev, items: false }));
   };
 
   const removeLineItem = (index: number) => {
@@ -208,139 +136,65 @@ export default function InvoiceForm({
   };
 
   const calculateTotal = () => {
-    return formData.Line.reduce((sum: number, item: any) => sum + item.Amount, 0);
+    return formData.Line.reduce((total: number, line: any) => {
+      return total + (line.SalesItemLineDetail.Qty * line.SalesItemLineDetail.UnitPrice);
+    }, 0);
   };
 
   return (
-    <form onSubmit={handleFormSubmit} className="space-y-6">
-      {/* Customer and Date Section */}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Customer and Dates Section */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        {/* <div>
+        {/* Customer Selection */}
+        <div>
           <label className="block text-sm font-medium text-gray-700">Customer*</label>
           <select
-            value={newLineItem.SalesItemLineDetail.ItemRef.value}
+            value={formData.CustomerRef.value}
             onChange={(e) => {
-              const selectedItem = items.find(item => item.Id === e.target.value);
-              setNewLineItem({
-                ...newLineItem,
-                SalesItemLineDetail: {
-                  ...newLineItem.SalesItemLineDetail,
-                  ItemRef: {
-                    value: e.target.value,
-                    name: selectedItem?.Name || ''
-                  },
-                  UnitPrice: selectedItem?.UnitPrice || 0
-                },
-                Description: selectedItem?.Name || ''
+              const selectedCustomer = customers.find(c => c.Id === e.target.value);
+              setFormData({
+                ...formData,
+                CustomerRef: {
+                  value: e.target.value,
+                  name: selectedCustomer?.name || selectedCustomer?.DisplayName || ''
+                }
               });
+              setErrors(prev => ({ ...prev, customer: false }));
             }}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             required
           >
-            <option value="">Select an item</option>
-            {items.map(item => (
-              <option
-                key={item.Id}
-                value={item.Id}
-                selected={isEditMode && newLineItem.SalesItemLineDetail.ItemRef.value === item.Id}
-              >
-                {item.Name} (${item.UnitPrice})
+            <option value="">Select a customer</option>
+            {customers.map(customer => (
+              <option key={customer.Id} value={customer.Id}>
+                {customer.name || customer.DisplayName || `Customer ${customer.Id}`}
               </option>
             ))}
           </select>
           {errors.customer && (
-            <p className="mt-1 text-sm text-red-600">Customer is required</p>
+            <p className="mt-1 text-sm text-red-600">Please select a customer</p>
           )}
-        </div> */}
+        </div>
 
-
-        <div>
-  <label className="block text-sm font-medium text-gray-700">Customer*</label>
-  <select
-    value={formData.CustomerRef?.value || ''}
-    onChange={(e) => {
-      const selectedCustomer = customers.find(c => c.Id === e.target.value);
-      setFormData({
-        ...formData,
-        CustomerRef: {
-          value: e.target.value,
-          name: selectedCustomer?.name || selectedCustomer?.DisplayName || ''
-        }
-      });
-      setErrors(prev => ({ ...prev, customer: false }));
-    }}
-    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-    required
-  >
-    <option value="">Select a customer</option>
-    {customers.map(customer => (
-      <option key={customer.Id} value={customer.Id}>
-        {customer.name || customer.DisplayName || `Customer ${customer.Id}`}
-      </option>
-    ))}
-  </select>
-  {errors.customer && (
-    <p className="mt-1 text-sm text-red-600">Customer is required</p>
-  )}
-</div>
-
-{/* Item Selection for Line Items */}
-<div className="grid grid-cols-1 gap-6 sm:grid-cols-4 ]">
-  <div>
-    <label className="block text-sm font-medium text-gray-700">Item</label>
-    <select
-      value={newLineItem.SalesItemLineDetail.ItemRef.value}
-      onChange={(e) => {
-        const selectedItem = items.find(item => item.Id === e.target.value);
-        setNewLineItem({
-          ...newLineItem,
-          SalesItemLineDetail: {
-            ...newLineItem.SalesItemLineDetail,
-            ItemRef: {
-              value: e.target.value,
-              name: selectedItem?.Name || ''
-            },
-            UnitPrice: selectedItem?.UnitPrice || 0
-          },
-          Description: selectedItem?.Name || ''
-        });
-      }}
-      className="mt-1 block  border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm w-[190px]" 
-    >
-      <option value="">Select an item</option>
-      {items.map(item => (
-        <option key={item.Id} value={item.Id}>
-          {item.Name} (${item.UnitPrice})
-        </option>
-      ))}
-    </select>
-  </div>
-  {/* Rest of your line item fields (Qty, UnitPrice, etc.) */}
-</div>
-
+        {/* Transaction Date */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Date</label>
           <input
             type="date"
             value={formData.TxnDate}
-            onChange={(e) => setFormData({
-              ...formData,
-              TxnDate: e.target.value
-            })}
+            onChange={(e) => setFormData({ ...formData, TxnDate: e.target.value })}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             required
           />
         </div>
 
+        {/* Due Date */}
         <div>
           <label className="block text-sm font-medium text-gray-700">Due Date</label>
           <input
             type="date"
             value={formData.DueDate}
-            onChange={(e) => setFormData({
-              ...formData,
-              DueDate: e.target.value
-            })}
+            onChange={(e) => setFormData({ ...formData, DueDate: e.target.value })}
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             required
           />
@@ -348,19 +202,21 @@ export default function InvoiceForm({
       </div>
 
       {/* Line Items Section */}
-      {/* Line Items List */}
-      <div className="space-y-2">
-        {formData?.Line?.map((item: any, index: number) => (
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-gray-900">Line Items</h3>
+        
+        {/* Existing Line Items */}
+        {formData.Line.map((line: any, index: number) => (
           <div key={index} className="flex justify-between items-center p-3 border rounded bg-white">
             <div>
-              <p className="font-medium">{item.Description}</p>
+              <p className="font-medium">{line.Description}</p>
               <p className="text-sm text-gray-500">
-                {item.SalesItemLineDetail?.Qty} x ${item.SalesItemLineDetail?.UnitPrice}
+                {line.SalesItemLineDetail.Qty} x ${line.SalesItemLineDetail.UnitPrice}
               </p>
             </div>
             <div className="flex items-center">
               <span className="font-medium mr-4">
-                ${(item.SalesItemLineDetail?.Qty * item.SalesItemLineDetail?.UnitPrice).toFixed(2)}
+                ${(line.SalesItemLineDetail.Qty * line.SalesItemLineDetail.UnitPrice).toFixed(2)}
               </span>
               <button
                 type="button"
@@ -372,20 +228,106 @@ export default function InvoiceForm({
             </div>
           </div>
         ))}
+
+        {/* Add New Line Item Form */}
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
+          {/* Item Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Item*</label>
+            <select
+              value={newLineItem.SalesItemLineDetail.ItemRef.value}
+              onChange={(e) => {
+                const selectedItem = items.find(item => item.Id === e.target.value);
+                setNewLineItem({
+                  ...newLineItem,
+                  SalesItemLineDetail: {
+                    ...newLineItem.SalesItemLineDetail,
+                    ItemRef: {
+                      value: e.target.value,
+                      name: selectedItem?.Name || ''
+                    },
+                    UnitPrice: selectedItem?.UnitPrice || 0
+                  },
+                  Description: selectedItem?.Name || ''
+                });
+              }}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            >
+              <option value="">Select an item</option>
+              {items.map(item => (
+                <option key={item.Id} value={item.Id}>
+                  {item.Name} (${item.UnitPrice})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Quantity */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Quantity</label>
+            <input
+              type="number"
+              min="1"
+              value={newLineItem.SalesItemLineDetail.Qty}
+              onChange={(e) => setNewLineItem({
+                ...newLineItem,
+                SalesItemLineDetail: {
+                  ...newLineItem.SalesItemLineDetail,
+                  Qty: parseInt(e.target.value) || 1
+                }
+              })}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          {/* Unit Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Unit Price</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={newLineItem.SalesItemLineDetail.UnitPrice}
+              onChange={(e) => setNewLineItem({
+                ...newLineItem,
+                SalesItemLineDetail: {
+                  ...newLineItem.SalesItemLineDetail,
+                  UnitPrice: parseFloat(e.target.value) || 0
+                }
+              })}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          {/* Add Button */}
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={addLineItem}
+              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            >
+              Add Item
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Customer Memo */}
       <div>
         <label className="block text-sm font-medium text-gray-700">Customer Memo</label>
         <textarea
-          value={formData?.CustomerMemo}
-          onChange={(e) => setFormData({
-            ...formData,
-            CustomerMemo: e.target.value
-          })}
+          value={formData.CustomerMemo}
+          onChange={(e) => setFormData({ ...formData, CustomerMemo: e.target.value })}
           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
           rows={3}
         />
+      </div>
+
+      {/* Total Amount */}
+      <div className="text-right">
+        <p className="text-lg font-medium">
+          Total: ${calculateTotal().toFixed(2)}
+        </p>
       </div>
 
       {/* Form Actions */}
