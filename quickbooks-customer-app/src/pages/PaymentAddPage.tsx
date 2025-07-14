@@ -193,7 +193,7 @@ export default function AddPaymentPage() {
                         {customersLoading ? (
                             <div className="flex items-center">
                                 <Loading name="customers" />
-                                <span className="ml-2 text-gray-500">Loading customers...</span>
+                                {/* <span className="ml-2 text-gray-500">Loading customers...</span> */}
                             </div>
                         ) : (
                             <select
@@ -311,7 +311,7 @@ export default function AddPaymentPage() {
                         {invoicesLoading ? (
                             <div className="flex items-center justify-center p-4">
                                 <Loading name="invoices" />
-                                <span className="ml-2 text-gray-500">Loading invoices...</span>
+                                {/* <span className="ml-2 text-gray-500">Loading invoices...</span> */}
                             </div>
                         ) : invoices.length > 0 ? (
                             <>
@@ -389,7 +389,7 @@ export default function AddPaymentPage() {
                         {loading ? (
                             <span className="flex items-center">
                                 <Loading name="payment" />
-                                <span className="ml-2">Processing...</span>
+                                {/* <span className="ml-2">Processing...</span> */}
                             </span>
                         ) : 'Create Payment'}
                     </button>
