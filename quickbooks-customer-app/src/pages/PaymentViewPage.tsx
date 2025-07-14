@@ -95,7 +95,7 @@ export default function PaymentViewPage() {
 
         <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-medium text-gray-900">Payment Details</h2>
+            <h2 className="text-lg font-medium text-gray-900"> </h2>
             <div className="mt-2 border-t border-gray-200 pt-4 space-y-4">
               <div className="flex justify-between">
                 <span className="text-sm font-medium text-gray-500">Total Amount</span>

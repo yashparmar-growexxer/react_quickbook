@@ -215,7 +215,7 @@ export default function InvoiceForm({
     <form onSubmit={handleFormSubmit} className="space-y-6">
       {/* Customer and Date Section */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700">Customer*</label>
           <select
             value={newLineItem.SalesItemLineDetail.ItemRef.value}
@@ -251,7 +251,72 @@ export default function InvoiceForm({
           {errors.customer && (
             <p className="mt-1 text-sm text-red-600">Customer is required</p>
           )}
-        </div>
+        </div> */}
+
+
+        <div>
+  <label className="block text-sm font-medium text-gray-700">Customer*</label>
+  <select
+    value={formData.CustomerRef?.value || ''}
+    onChange={(e) => {
+      const selectedCustomer = customers.find(c => c.Id === e.target.value);
+      setFormData({
+        ...formData,
+        CustomerRef: {
+          value: e.target.value,
+          name: selectedCustomer?.name || selectedCustomer?.DisplayName || ''
+        }
+      });
+      setErrors(prev => ({ ...prev, customer: false }));
+    }}
+    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+    required
+  >
+    <option value="">Select a customer</option>
+    {customers.map(customer => (
+      <option key={customer.Id} value={customer.Id}>
+        {customer.name || customer.DisplayName || `Customer ${customer.Id}`}
+      </option>
+    ))}
+  </select>
+  {errors.customer && (
+    <p className="mt-1 text-sm text-red-600">Customer is required</p>
+  )}
+</div>
+
+{/* Item Selection for Line Items */}
+<div className="grid grid-cols-1 gap-6 sm:grid-cols-4 ]">
+  <div>
+    <label className="block text-sm font-medium text-gray-700">Item</label>
+    <select
+      value={newLineItem.SalesItemLineDetail.ItemRef.value}
+      onChange={(e) => {
+        const selectedItem = items.find(item => item.Id === e.target.value);
+        setNewLineItem({
+          ...newLineItem,
+          SalesItemLineDetail: {
+            ...newLineItem.SalesItemLineDetail,
+            ItemRef: {
+              value: e.target.value,
+              name: selectedItem?.Name || ''
+            },
+            UnitPrice: selectedItem?.UnitPrice || 0
+          },
+          Description: selectedItem?.Name || ''
+        });
+      }}
+      className="mt-1 block  border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm w-[190px]" 
+    >
+      <option value="">Select an item</option>
+      {items.map(item => (
+        <option key={item.Id} value={item.Id}>
+          {item.Name} (${item.UnitPrice})
+        </option>
+      ))}
+    </select>
+  </div>
+  {/* Rest of your line item fields (Qty, UnitPrice, etc.) */}
+</div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Date</label>
